@@ -23,7 +23,7 @@ global class AutocreatedRegHandler1604832864351 implements Auth.SamlJitHandler {
 				u.LastName = attributes.get('Contact.LastName');
 			}                   
             
-			u.ProfileId = '00e2y000000xZfH';  //set to customer profile
+			u.ProfileId = '00e2y000000xZfH';  //Replace your External Identity Profile ID
             
             u.CommunityNickname  = u.FirstName + ' ' + u.LastName;            
 
@@ -50,7 +50,6 @@ global class AutocreatedRegHandler1604832864351 implements Auth.SamlJitHandler {
 				alias = u.FirstName.substring(0,1) + u.LastName;
 			}
 
-            system.debug ('alias - ' + alias);
 			if(alias.length() > 5) {
 				alias = alias.substring(0, 5);
 			}
@@ -235,7 +234,7 @@ global class AutocreatedRegHandler1604832864351 implements Auth.SamlJitHandler {
 
 	private String handleAccount(boolean create, User u, Map<String, String> attributes) {
 		Account a;
-        return '0012y000007PtANAA0'; //Account "Customer" Id
+        return '0012y000007PtANAA0'; //Replace your Customer Account record ID
         
 	/*	boolean newAccount = false;
 		if(create) {
