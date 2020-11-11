@@ -1,0 +1,54 @@
+@isTest
+private class CCJITHandlerTest {
+    
+    private static final String ACCOUNT_SUPPORT_NAME = 'CC Customer';
+    private static final String CONTACT_LAST_NAME = 'lastName';
+     private static final String CONTACT_FIRST_NAME = 'firstName';
+    private static final String CONTACT_EMAIL = 'test@example.com';
+
+    @testSetup
+    private static void testSetup() {
+        Account anAccount = new Account(
+            Name = ACCOUNT_SUPPORT_NAME)
+        ;
+        insert anAccount;
+
+  /*      Contact aContact = new Contact(
+            LastName = CONTACT_LAST_NAME, 
+            Email = CONTACT_EMAIL, 
+            AccountId = anAccount.Id
+        );
+        insert aContact;
+*/
+    }
+
+@isTest 
+    private static void createUser_AccountFound_CreateUserForNonExistingContact() {
+        final Id samlSsoProviderId = '0LE6s0000004CDy';
+        final Id communityId = '0DB6s0000004CLi';
+        final Id portalId = null;
+        final String federationIdentifier = 'test@accout.com';
+        final Map<String, String> attributes = new Map<String, String> {
+            'Contact.FirstName' => CONTACT_FIRST_NAME,
+            'Contact.LastName' => CONTACT_LAST_NAME,
+            'Contact.Email' => CONTACT_EMAIL
+                
+        };
+        final String assertion = 'assertion';
+
+        Test.startTest();
+            CCJITHandler handler = new CCJITHandler();
+            handler.createUser(samlSsoProviderId, communityId, portalId, federationIdentifier, attributes, assertion);
+        Test.stopTest();
+
+        // Select more fields and do more assertions than this
+        User newUser = [SELECT Email, IsActive, CommunityNickname, FederationIdentifier FROM User];
+        System.assertEquals(CONTACT_EMAIL, newUser.Email);
+        System.assertEquals(true, newUser.IsActive);
+        //System.assert(CommunityNickname.startsWith('nickSSo'));
+        System.assertEquals(federationIdentifier, newUser.FederationIdentifier);
+
+        // No additional contacts created
+        System.assertEquals(1, [SELECT count() FROM Contact]);
+    }
+}
