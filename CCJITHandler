@@ -27,7 +27,7 @@ global class CCJITHandler implements Auth.SamlJitHandler {
             u.ProfileId = p.Id;
 			//u.ProfileId = '00e2y000000xZfH';  //Replace your External Identity Profile ID
             
-            u.CommunityNickname  = u.FirstName + ' ' + u.LastName;            
+            //u.CommunityNickname  = u.FirstName + ' ' + u.LastName;            
 
 		String uid = UserInfo.getUserId();
 		User currentUser = 
