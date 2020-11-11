@@ -3,7 +3,6 @@ global class CCJITHandler implements Auth.SamlJitHandler {
 	private void handleUser(boolean create, User u, Map<String, String> attributes,
 		String federationIdentifier, boolean isStandard) {
             
-   //         system.debug ('federation ID = ' + federationIdentifier);
 
             if(create) {
 				u.Username = federationIdentifier;
@@ -127,9 +126,9 @@ global class CCJITHandler implements Auth.SamlJitHandler {
 
 	private String handleAccount(boolean create, User u, Map<String, String> attributes) {
 		Account a;
-        system.debug('in handle account');
+
         a =[SELECT Id FROM Account WHERE Name='CC Customer'];
-        system.debug(a.Id);
+ 
         return a.Id;
         //return '0012y000007PtANAA0'; //Replace your Customer Account record ID
         
@@ -138,17 +137,7 @@ global class CCJITHandler implements Auth.SamlJitHandler {
 	private void handleJit(boolean create, User u, Id samlSsoProviderId, Id communityId, Id portalId,
 		String federationIdentifier, Map<String, String> attributes, String assertion) {
             
-        system.debug (samlSsoProviderId)  ;
-            system.debug (communityId)  ;
-            system.debug (portalId)  ;
-             system.debug (federationIdentifier)  ;
-            system.debug (attributes)  ;
-            system.debug (assertion)  ;
-            
-            
-            
-            
-            
+ 
 		if(communityId != null || portalId != null) {
             system.debug ('create - ' + create);
 			String account = handleAccount(create, u, attributes);
