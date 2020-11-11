@@ -31,19 +31,15 @@ global class CCJITHandler implements Auth.SamlJitHandler {
 		String uid = UserInfo.getUserId();
 		User currentUser = 
 			[SELECT LocaleSidKey, LanguageLocaleKey, TimeZoneSidKey, EmailEncodingKey FROM User WHERE Id=:uid];
-		if(attributes.containsKey('User.LocaleSidKey')) {
-			u.LocaleSidKey = attributes.get('User.LocaleSidKey');
-		} else if(create) {
+		if(create) {
 			u.LocaleSidKey = currentUser.LocaleSidKey;
 		}
-		if(attributes.containsKey('User.LanguageLocaleKey')) {
-			u.LanguageLocaleKey = attributes.get('User.LanguageLocaleKey');
-		} else if(create) {
+		
+		if(create) {
 			u.LanguageLocaleKey = currentUser.LanguageLocaleKey;
 		}
-		if(attributes.containsKey('User.Alias')) {
-			u.Alias = attributes.get('User.Alias');
-		} else if(create) {
+		
+		if(create) {
 			String alias = '';
 			if(u.FirstName == null) {
 				alias = u.LastName;
@@ -57,14 +53,11 @@ global class CCJITHandler implements Auth.SamlJitHandler {
             
 			u.Alias = alias;
 		}
-		if(attributes.containsKey('User.TimeZoneSidKey')) {
-			u.TimeZoneSidKey = attributes.get('User.TimeZoneSidKey');
-		} else if(create) {
+		if(create) {
 			u.TimeZoneSidKey = currentUser.TimeZoneSidKey;
 		}
-		if(attributes.containsKey('User.EmailEncodingKey')) {
-			u.EmailEncodingKey = attributes.get('User.EmailEncodingKey');
-		} else if(create) {
+		
+		if(create) {
 			u.EmailEncodingKey = currentUser.EmailEncodingKey;
 		}
 
