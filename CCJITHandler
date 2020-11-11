@@ -1,0 +1,177 @@
+global class CCJITHandler implements Auth.SamlJitHandler {
+	private class JitException extends Exception{}
+	private void handleUser(boolean create, User u, Map<String, String> attributes,
+		String federationIdentifier, boolean isStandard) {
+            
+   //         system.debug ('federation ID = ' + federationIdentifier);
+
+            if(create) {
+				u.Username = federationIdentifier;
+                u.FederationIdentifier = federationIdentifier;
+			}
+            
+ 			if(attributes.containsKey('Contact.Email')) {
+				u.Email = attributes.get('Contact.Email');
+			}           
+
+ 			if(attributes.containsKey('Contact.FirstName')) {
+				u.FirstName = attributes.get('Contact.FirstName');
+			}            
+            
+			if(attributes.containsKey('Contact.LastName')) {
+				u.LastName = attributes.get('Contact.LastName');
+			}                   
+            
+			Profile p;
+			p = [SELECT Id FROM Profile WHERE Name = 'CC Customer'];            
+            u.ProfileId = p.Id;
+			//u.ProfileId = '00e2y000000xZfH';  //Replace your External Identity Profile ID
+            
+            u.CommunityNickname  = u.FirstName + ' ' + u.LastName;            
+
+		String uid = UserInfo.getUserId();
+		User currentUser = 
+			[SELECT LocaleSidKey, LanguageLocaleKey, TimeZoneSidKey, EmailEncodingKey FROM User WHERE Id=:uid];
+		if(attributes.containsKey('User.LocaleSidKey')) {
+			u.LocaleSidKey = attributes.get('User.LocaleSidKey');
+		} else if(create) {
+			u.LocaleSidKey = currentUser.LocaleSidKey;
+		}
+		if(attributes.containsKey('User.LanguageLocaleKey')) {
+			u.LanguageLocaleKey = attributes.get('User.LanguageLocaleKey');
+		} else if(create) {
+			u.LanguageLocaleKey = currentUser.LanguageLocaleKey;
+		}
+		if(attributes.containsKey('User.Alias')) {
+			u.Alias = attributes.get('User.Alias');
+		} else if(create) {
+			String alias = '';
+			if(u.FirstName == null) {
+				alias = u.LastName;
+			} else {
+				alias = u.FirstName.substring(0,1) + u.LastName;
+			}
+
+			if(alias.length() > 5) {
+				alias = alias.substring(0, 5);
+			}
+            
+			u.Alias = alias;
+		}
+		if(attributes.containsKey('User.TimeZoneSidKey')) {
+			u.TimeZoneSidKey = attributes.get('User.TimeZoneSidKey');
+		} else if(create) {
+			u.TimeZoneSidKey = currentUser.TimeZoneSidKey;
+		}
+		if(attributes.containsKey('User.EmailEncodingKey')) {
+			u.EmailEncodingKey = attributes.get('User.EmailEncodingKey');
+		} else if(create) {
+			u.EmailEncodingKey = currentUser.EmailEncodingKey;
+		}
+
+
+		//Handle custom fields here
+
+		if(!create) {
+			update(u);
+		}
+	}
+
+	private void handleContact(boolean create, String accountId, User u, Map<String, String> attributes) {
+		Contact c;
+		boolean newContact = false;
+		if(create) {
+			if(attributes.containsKey('User.Contact')) {
+			String contact = attributes.get('User.Contact');
+				c = [SELECT Id, AccountId FROM Contact WHERE Id=:contact];
+				u.ContactId = contact;
+			} else {
+				c = new Contact();
+				newContact = true;
+			}
+		} else {
+			if(attributes.containsKey('User.Contact')) {
+				String contact = attributes.get('User.Contact');
+				c = [SELECT Id, AccountId FROM Contact WHERE Id=:contact];
+				if(u.ContactId != c.Id) {
+					throw new JitException('Cannot change User.ContactId');
+				}
+			} else {
+				String contact = u.ContactId;
+				c = [SELECT Id, AccountId FROM Contact WHERE Id=:contact];
+			}
+		}
+		if(!newContact && c.AccountId != accountId) {
+			throw new JitException('Mismatched account: ' + c.AccountId + ', ' + accountId);
+		}
+
+		if(attributes.containsKey('Contact.Email')) {
+			c.Email = attributes.get('Contact.Email');
+		}
+		if(attributes.containsKey('Contact.FirstName')) {
+			c.FirstName = attributes.get('Contact.FirstName');
+		}
+        
+		if(attributes.containsKey('Contact.LastName')) {
+			c.LastName = attributes.get('Contact.LastName');
+		}
+
+		if(newContact) {
+			c.AccountId = accountId;
+			insert(c);
+			u.ContactId = c.Id;
+		} else {
+			update(c);
+		}
+	}
+
+	private String handleAccount(boolean create, User u, Map<String, String> attributes) {
+		Account a;
+        system.debug('in handle account');
+        a =[SELECT Id FROM Account WHERE Name='CC Customer'];
+        system.debug(a.Id);
+        return a.Id;
+        //return '0012y000007PtANAA0'; //Replace your Customer Account record ID
+        
+	}
+
+	private void handleJit(boolean create, User u, Id samlSsoProviderId, Id communityId, Id portalId,
+		String federationIdentifier, Map<String, String> attributes, String assertion) {
+            
+        system.debug (samlSsoProviderId)  ;
+            system.debug (communityId)  ;
+            system.debug (portalId)  ;
+             system.debug (federationIdentifier)  ;
+            system.debug (attributes)  ;
+            system.debug (assertion)  ;
+            
+            
+            
+            
+            
+		if(communityId != null || portalId != null) {
+            system.debug ('create - ' + create);
+			String account = handleAccount(create, u, attributes);
+            system.debug ('account - ' + account);
+			handleContact(create, account, u, attributes);
+			handleUser(create, u, attributes, federationIdentifier, false);
+		} else {
+			handleUser(create, u, attributes, federationIdentifier, true);
+		}
+	}
+
+	global User createUser(Id samlSsoProviderId, Id communityId, Id portalId,
+		String federationIdentifier, Map<String, String> attributes, String assertion) {
+		User u = new User();
+		handleJit(true, u, samlSsoProviderId, communityId, portalId,
+			federationIdentifier, attributes, assertion);
+		return u;
+	}
+
+	global void updateUser(Id userId, Id samlSsoProviderId, Id communityId, Id portalId,
+		String federationIdentifier, Map<String, String> attributes, String assertion) {
+		User u = [SELECT Id, FirstName, ContactId FROM User WHERE Id=:userId];
+		handleJit(false, u, samlSsoProviderId, communityId, portalId,
+			federationIdentifier, attributes, assertion);
+	}
+}
